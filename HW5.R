@@ -40,7 +40,7 @@ currfile.data = c(overall.loudness, spectral.energy, dissonance, pitch.salience,
                   danceability, tuning.freq)
 
 
-# Step 2
+# Step 2, repeat for all .json files
 # load files
 all.files = (list.files("EssentiaOutput", recursive=TRUE))
 
@@ -49,21 +49,28 @@ json.check = str_count(all.files, pattern=".json")
 all.json = all.files[which(json.check == 1)]
 
 # create data frame
-json.tibble = tibble(
+json.data = tibble(
   artist = character(),
-  album = char
+  album = character(),
+  overall.loudness = numeric(),
+  spectral.energy = numeric(),
+  dissonance = numeric(),
+  pitch.sailence = numeric(),
+  tempo.bpm = numeric(),
+  beat.loudness = numeric(),
+  danceability = numeric(),
+  tuning.freq = numeric()
 )
 
 # repeat same for all files in step 1
 for (i in 1:length(all.json)){
-  curr.file = fromJSON(paste("EssentiaOutput/", all.json[i], sep= 
-                               ""))
+  curr.file = fromJSON(paste("EssentiaOutput/", all.json[i], sep = ""))
   currfile.split =  str_split_1(all.json[i], "-")
-  (curr.artist = currfile.split[1])
-  (curr.album = currfile.split[2])
-  (curr.track = str_sub(currfile.split[3], start = 0, end = -6))
+  curr.artist = currfile.split[1]
+  curr.album = currfile.split[2]
+  curr.track = str_sub(currfile.split[3], start = 0, end = -6)
   
-  (overall.loudness = curr.file$lowlevel$loudness_ebu128$integrated)
+  overall.loudness = curr.file$lowlevel$loudness_ebu128$integrated
   spectral.energy = curr.file$lowlevel$spectral_energy$mean
   dissonance = curr.file$lowlevel$dissonance$mean
   pitch.salience = curr.file$lowlevel$pitch_salience$mean
@@ -72,11 +79,12 @@ for (i in 1:length(all.json)){
   danceability = curr.file$rhythm$danceability
   tuning.freq = curr.file$tonal$tuning_frequency
   
-  currfile.data = c(curr.artist, curr.album, curr.track,
-                    overall.loudness, spectral.energy, 
-                    dissonance, pitch.salience, bpm,
-                    beats.loudness, danceability, tuning.freq)
-  df.json[i,] <-currfile.data
+  # insert into tibble
+  # create row of data for each song, add to tibble
+  json.data = bind_rows(json.data, tibble(
+    artist = curr.artist, album = curr.album, track = curr.track, overall.loudness, 
+    spectral.energy, dissonance, pitch.salience, bpm, beats.loudness, 
+    danceability, tuning.freq))
 }
 
 
@@ -85,17 +93,17 @@ for (i in 1:length(all.json)){
 essentia.file = read_csv("EssentiaOutput/EssentiaModelOutput.csv") 
 # create new cols using mutate, 
 # use rowMeans() + cbind to find means for some features
-df.essentia <- essentia.file |>
-  mutate(valence = rowMeans(cbind(deam_valence, emo_valence, muse_valence)),
-         arousal = rowMeans(cbind(deam_arousal, emo_arousal, muse_arousal)),
-         aggressive = rowMeans(cbind(eff_aggressive, nn_aggressive)),
-         happy = rowMeans(cbind(eff_happy, nn_happy)),
-         party = rowMeans(cbind(eff_party, nn_party)),
-         relaxed = rowMeans(cbind(eff_relax, nn_relax)),
-         sad = rowMeans(cbind(eff_sad, nn_sad)),
-         acoustic = rowMeans(cbind(eff_acoustic, nn_acoustic)),
-         electric = rowMeans(cbind(eff_electronic, nn_electronic)),
-         instrumental = rowMeans(cbind(eff_instrumental, nn_instrumental))) |>
+essentia.data <- essentia.file |>
+  mutate(valence = rowMeans(bind_cols(deam_valence, emo_valence, muse_valence)),
+         arousal = rowMeans(bind_cols(deam_arousal, emo_arousal, muse_arousal)),
+         aggressive = rowMeans(bind_cols(eff_aggressive, nn_aggressive)),
+         happy = rowMeans(bind_cols(eff_happy, nn_happy)),
+         party = rowMeans(bind_cols(eff_party, nn_party)),
+         relaxed = rowMeans(bind_cols(eff_relax, nn_relax)),
+         sad = rowMeans(bind_cols(eff_sad, nn_sad)),
+         acoustic = rowMeans(bind_cols(eff_acoustic, nn_acoustic)),
+         electric = rowMeans(bind_cols(eff_electronic, nn_electronic)),
+         instrumental = rowMeans(bind_cols(eff_instrumental, nn_instrumental))) |>
 # rename timbreBright
   rename(timbreBright = eff_timbre_bright) |>
 # select features
@@ -105,7 +113,7 @@ df.essentia <- essentia.file |>
 
 # Step 4
 # join all data into one file, grouping by artist, album, track (eliminate dupes)
-liwc.file = read_csv("LIWCOutput/LIWCOutput.csv")
+liwc.data = read_csv("LIWCOutput/LIWCOutput.csv")
 
 
 
