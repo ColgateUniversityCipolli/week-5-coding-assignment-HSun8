@@ -84,12 +84,14 @@ runs in the directory as it is set up.
 
 
 \hlcom{# Step 0}
+\hlcom{# load packages}
 \hlkwd{library}\hldef{(}\hlsng{"stringr"}\hldef{)}
 \hlkwd{library}\hldef{(}\hlsng{"jsonlite"}\hldef{)}
 \hlkwd{library}\hldef{(tidyverse)}
 
 
-\hlcom{#Step 1, Front Bottoms Example}
+\hlcom{# Step 1}
+\hlcom{# Front Bottoms Example}
 \hldef{current.filename} \hlkwb{=} \hlsng{"The Front Bottoms-Talon of the Hawk-Au Revoir (Adios).json"}
 \hldef{currentfile.split} \hlkwb{=} \hlkwd{str_split_1}\hldef{(current.filename,} \hlsng{"-"}\hldef{)}
 
@@ -98,7 +100,7 @@ runs in the directory as it is set up.
 \hldef{album} \hlkwb{=} \hldef{currentfile.split[}\hlnum{2}\hldef{]}
 \hldef{track} \hlkwb{=} \hlkwd{str_sub}\hldef{(currentfile.split[}\hlnum{3}\hldef{],} \hlkwc{start} \hldef{=} \hlnum{0}\hldef{,} \hlkwc{end} \hldef{=} \hlopt{-}\hlnum{6}\hldef{)}
 
-\hlcom{# Essentia Output}
+\hlcom{# JSON Output}
 \hldef{curr.json} \hlkwb{=} \hldef{(}\hlkwd{fromJSON}\hldef{(}\hlkwd{paste}\hldef{(}\hlsng{"EssentiaOutput/"}\hldef{, current.filename,} \hlkwc{sep}\hldef{=}\hlsng{""}\hldef{)))}
 
 \hlcom{# lowlevel}
@@ -120,7 +122,8 @@ runs in the directory as it is set up.
                   \hldef{danceability, tuning.freq)}
 
 
-\hlcom{# Step 2, repeat for all .json files}
+\hlcom{# Step 2}
+\hlcom{# repeat Step 1 for all files}
 \hlcom{# load files}
 \hldef{all.files} \hlkwb{=} \hldef{(}\hlkwd{list.files}\hldef{(}\hlsng{"EssentiaOutput"}\hldef{,} \hlkwc{recursive}\hldef{=}\hlnum{TRUE}\hldef{))}
 
@@ -142,7 +145,6 @@ runs in the directory as it is set up.
   \hlkwc{tuning.freq} \hldef{=} \hlkwd{numeric}\hldef{()}
 \hldef{)}
 
-\hlcom{# repeat same for all files in step 1}
 \hlkwa{for} \hldef{(i} \hlkwa{in} \hlnum{1}\hlopt{:}\hlkwd{length}\hldef{(all.json))\{}
   \hldef{curr.file} \hlkwb{=} \hlkwd{fromJSON}\hldef{(}\hlkwd{paste}\hldef{(}\hlsng{"EssentiaOutput/"}\hldef{, all.json[i],} \hlkwc{sep} \hldef{=} \hlsng{""}\hldef{))}
   \hldef{currfile.split} \hlkwb{=}  \hlkwd{str_split_1}\hldef{(all.json[i],} \hlsng{"-"}\hldef{)}
@@ -172,9 +174,11 @@ runs in the directory as it is set up.
 \hlcom{# Step 3}
 \hlcom{# read csv into a tibble}
 \hldef{essentia.file} \hlkwb{=} \hlkwd{read_csv}\hldef{(}\hlsng{"EssentiaOutput/EssentiaModelOutput.csv"}\hldef{)}
+
 \hlcom{# create new cols using mutate, }
 \hlcom{# use rowMeans() + cbind to find means for some features}
-\hlcom{# I was trying to use bind_cols but it displayed a bunch of messages when running}
+\hlcom{# I was trying to use bind_cols but it displayed a bunch of messages when }
+\hlcom{# running, so I switched back to cbind()}
 \hldef{essentia.data} \hlkwb{<-} \hldef{essentia.file |>}
   \hlkwd{mutate}\hldef{(}\hlkwc{valence} \hldef{=} \hlkwd{rowMeans}\hldef{(}\hlkwd{cbind}\hldef{(deam_valence, emo_valence, muse_valence)),}
          \hlkwc{arousal} \hldef{=} \hlkwd{rowMeans}\hldef{(}\hlkwd{cbind}\hldef{(deam_arousal, emo_arousal, muse_arousal)),}
@@ -199,7 +203,7 @@ runs in the directory as it is set up.
 \hldef{all.data} \hlkwb{<-} \hldef{essentia.data |>}
   \hlkwd{left_join}\hldef{(json.data,} \hlkwc{by} \hldef{=} \hlkwd{c}\hldef{(}\hlsng{"artist"}\hldef{,} \hlsng{"album"}\hldef{,} \hlsng{"track"}\hldef{)) |>}
   \hlkwd{left_join}\hldef{(liwc.data,} \hlkwc{by} \hldef{=} \hlkwd{c}\hldef{(}\hlsng{"artist"}\hldef{,} \hlsng{"album"}\hldef{,} \hlsng{"track"}\hldef{)) |>}
-\hlcom{# rename function}
+  \hlcom{# rename function}
   \hlkwd{rename}\hldef{(}\hlsng{"funct"} \hldef{=} \hlsng{"function"}\hldef{)}
 
 
@@ -207,6 +211,7 @@ runs in the directory as it is set up.
 \hldef{training.data} \hlkwb{=} \hlkwd{filter}\hldef{(all.data, track} \hlopt{!=} \hlsng{"Allentown"}\hldef{)}
 \hldef{testing.data} \hlkwb{=} \hlkwd{filter}\hldef{(all.data, track} \hlopt{==} \hlsng{"Allentown"}\hldef{)}
 
+\hlcom{# create separate csv files}
 \hldef{training.csv} \hlkwb{=} \hlkwd{write_csv}\hldef{(}\hlkwc{x}\hldef{=training.data,} \hlsng{"trainingdata.csv"}\hldef{)}
 \hldef{testing.csv} \hlkwb{=} \hlkwd{write_csv}\hldef{(}\hlkwc{x}\hldef{=testing.data,} \hlsng{"testingdata.csv"}\hldef{)}
 
@@ -220,10 +225,10 @@ runs in the directory as it is set up.
   \hlkwd{xlab}\hldef{(}\hlsng{"artist"}\hldef{)}\hlopt{+}
   \hlkwd{ylab}\hldef{(}\hlsng{"relaxed"}\hldef{)}\hlopt{+}
   \hlkwd{coord_flip}\hldef{()}
-\hldef{relaxed.plot}
+\hlcom{# print plot, commented out}
+\hlcom{#relaxed.plot}
 \end{alltt}
 \end{kframe}
-\includegraphics[width=\maxwidth]{figure/unnamed-chunk-1-1} 
 \end{knitrout}
 \end{enumerate}
 \bibliography{bibliography}

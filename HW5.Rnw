@@ -32,12 +32,14 @@ runs in the directory as it is set up.
 
 
 # Step 0
+# load packages
 library("stringr")
 library("jsonlite")
 library(tidyverse)
 
 
-#Step 1, Front Bottoms Example
+# Step 1
+# Front Bottoms Example
 current.filename = "The Front Bottoms-Talon of the Hawk-Au Revoir (Adios).json"
 currentfile.split = str_split_1(current.filename, "-")
 
@@ -46,7 +48,7 @@ artist = currentfile.split[1]
 album = currentfile.split[2]
 track = str_sub(currentfile.split[3], start = 0, end = -6)
 
-# Essentia Output
+# JSON Output
 curr.json = (fromJSON(paste("EssentiaOutput/", current.filename, sep="")))
 
 # lowlevel
@@ -68,7 +70,8 @@ currfile.data = tibble(overall.loudness, spectral.energy, dissonance, pitch.sali
                   danceability, tuning.freq)
 
 
-# Step 2, repeat for all .json files
+# Step 2
+# repeat Step 1 for all files
 # load files
 all.files = (list.files("EssentiaOutput", recursive=TRUE))
 
@@ -90,7 +93,6 @@ json.data = tibble(
   tuning.freq = numeric()
 )
 
-# repeat same for all files in step 1
 for (i in 1:length(all.json)){
   curr.file = fromJSON(paste("EssentiaOutput/", all.json[i], sep = ""))
   currfile.split =  str_split_1(all.json[i], "-")
@@ -120,9 +122,11 @@ for (i in 1:length(all.json)){
 # Step 3
 # read csv into a tibble
 essentia.file = read_csv("EssentiaOutput/EssentiaModelOutput.csv") 
+
 # create new cols using mutate, 
 # use rowMeans() + cbind to find means for some features
-# I was trying to use bind_cols but it displayed a bunch of messages when running
+# I was trying to use bind_cols but it displayed a bunch of messages when 
+# running, so I switched back to cbind()
 essentia.data <- essentia.file |>
   mutate(valence = rowMeans(cbind(deam_valence, emo_valence, muse_valence)),
          arousal = rowMeans(cbind(deam_arousal, emo_arousal, muse_arousal)),
@@ -147,7 +151,7 @@ liwc.data = read_csv("LIWCOutput/LIWCOutput.csv")
 all.data <- essentia.data |>
   left_join(json.data, by = c("artist", "album", "track")) |>
   left_join(liwc.data, by = c("artist", "album", "track")) |>
-# rename function
+  # rename function
   rename("funct" = "function")
 
 
@@ -155,6 +159,7 @@ all.data <- essentia.data |>
 training.data = filter(all.data, track != "Allentown")
 testing.data = filter(all.data, track == "Allentown")
 
+# create separate csv files
 training.csv = write_csv(x=training.data, "trainingdata.csv")
 testing.csv = write_csv(x=testing.data, "testingdata.csv")
 
@@ -168,7 +173,8 @@ relaxed.plot <- ggplot(read_csv("trainingdata.csv"), aes(x=artist, y=relaxed))+
   xlab("artist")+
   ylab("relaxed")+
   coord_flip()
-relaxed.plot
+# print plot, commented out
+#relaxed.plot
 @
 \end{enumerate}
 \bibliography{bibliography}
